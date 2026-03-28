@@ -405,11 +405,11 @@
 
       <!-- Fitness -->
       <div class="form-group">
-        <label>Fitness Level</label>
+        <label>วิ่งกี่ km / สัปดาห์</label>
         <div class="bg3" id="grp-fit">
-          <button class="opt" data-v="beginner">มือใหม่<sub>&lt;6 เดือน</sub></button>
-          <button class="opt" data-v="intermediate">ปานกลาง<sub>6m–2 ปี</sub></button>
-          <button class="opt" data-v="advanced">Advanced<sub>2+ ปี</sub></button>
+          <button class="opt" data-v="beginner">&lt;20 km/wk</button>
+          <button class="opt" data-v="intermediate">20–50 km/wk</button>
+          <button class="opt" data-v="advanced">&gt;50 km/wk</button>
         </div>
         <div class="err" id="e-fit">กรุณาเลือก Fitness Level</div>
       </div>
@@ -566,7 +566,7 @@ Weather : Cool ×1.0 | Normal ×1.05 | Hot &amp; Humid ×1.10</div>
           <div class="fi-body">
             การใช้ Substrate ขึ้นอยู่กับ %VO₂max (Intensity) ที่สูงขึ้นจะพึ่งพา Carb มากขึ้น ผู้หญิงมี Fat oxidation ดีกว่าผู้ชายที่ระดับความเข้มข้นเดียวกัน
             <div class="fi-eq">Carb% = Base ± Gender ± Intensity | cap 85%
-Base : Beginner 62% | Intermediate 55% | Advanced 47%
+Base : &lt;20 km/wk 62% | 20–50 km/wk 55% | &gt;50 km/wk 47%
 หญิง : −8% | Pace &lt;4:30 : +10% | Pace &lt;5:30 : +5%</div>
           </div>
         </div>
@@ -758,7 +758,7 @@ function render(d) {
   // ── Tags
   const distLabel    = { 5:'5K', 10:'10K', 21.1:'Half Marathon', 42.2:'Full Marathon' }[d.dist];
   const genderLabel  = { male:'ชาย', female:'หญิง' }[d.gender];
-  const fitLabel     = { beginner:'มือใหม่', intermediate:'ปานกลาง', advanced:'Advanced' }[d.fit];
+  const fitLabel     = { beginner:'<20 km/wk', intermediate:'20–50 km/wk', advanced:'>50 km/wk' }[d.fit];
   const weatherLabel = { cool:'❄️ เย็น', normal:'🌤 ปกติ', hot:'🌡 ร้อนชื้น' }[d.weather];
   const psStr        = d.ps.toString().padStart(2,'0');
   const npsStr       = d.nps.toString().padStart(2,'0');
@@ -849,42 +849,64 @@ function buildTimeline(d) {
 
   // Pre-run always
   items.push({
-    type:'start', km:'ก่อนวิ่ง',
+    type:'start', km:'1–2 ชั่วโมงก่อนปล่อยตัว',
     title:'โหลด Carb & ดื่มน้ำ',
-    desc:`ดื่มน้ำ 400–600 ml และรับประทาน Carb เบา ๆ 1–2 ชั่วโมงก่อนวิ่ง เช่น กล้วย ขนมปัง หรือ energy bar เพื่อเติม Glycogen ให้เต็ม`,
+    desc:`ดื่มน้ำ 400–600 ml และรับประทาน Carb เบา ๆ เช่น กล้วย ขนมปัง หรือ energy bar เพื่อเติม Glycogen ให้เต็ม`,
+  });
+  if (dist >= 21.1) {
+    items.push({
+      type:'gel', km:'15–30 นาทีก่อนปล่อยตัว',
+      title:'Pre-race Gel (25g carb) + น้ำ',
+      desc:`กิน Gel 1 ซองเพื่อ top-up น้ำตาลในเลือดให้พร้อมก่อน race เริ่ม ดื่มน้ำตาม 150–200 ml หลีกเลี่ยงการกินใกล้ปล่อยตัวเกินไป (น้อยกว่า 10 นาที) เพราะอาจทำให้ insulin spike`,
+    });
+  } else if (dist >= 10 && totalMin >= 60) {
+    items.push({
+      type:'gel', km:'15–20 นาทีก่อนปล่อยตัว',
+      title:'Pre-race Gel (25g carb) — ถ้าต้องการ',
+      desc:`สำหรับผู้ที่วิ่ง 10K นานกว่า 60 นาที การกิน Gel ก่อน Start ช่วย top-up พลังงาน ดื่มน้ำตาม 150 ml`,
+    });
+  }
+
+  // Water stations — Thai races every ~2km
+  items.push({
+    type:'water', km:'ตลอดเส้นทาง',
+    title:'รับน้ำที่จุดให้น้ำ',
+    desc:'งานวิ่งในไทยมีจุดให้น้ำทุก ~2 km — รับน้ำทุกจุดแม้จะยังไม่กระหาย อย่ารอจนรู้สึกกระหายค่อยดื่ม',
   });
 
   if (dist <= 5) {
-    if (totalMin >= 30) {
-      items.push({ type:'water', km:'~2.5 km', title:'น้ำเปล่า 150 ml (ถ้ามีจุดบริการ)', desc:'การวิ่ง 5K ไม่จำเป็นต้องเติม Carb ระหว่างทาง จิบน้ำเล็กน้อยถ้ารู้สึกกระหาย' });
-    } else {
-      items.push({ type:'water', km:'ระหว่างวิ่ง', title:'ไม่จำเป็นต้องเติม Carb', desc:'ระยะ 5K ในเวลาสั้น ร่างกายมี Glycogen เพียงพอ ดื่มน้ำได้ตามความต้องการ' });
-    }
+    items.push({ type:'gel', km:'ระหว่างวิ่ง', title:'ไม่จำเป็นต้องเติม Gel', desc:'ระยะ 5K Glycogen เพียงพอตลอดการวิ่ง' });
   } else if (dist <= 10) {
-    items.push({ type:'water', km:'~3 km', title:'น้ำเปล่า 150 ml', desc:'ดื่มน้ำเล็กน้อยรักษาระดับความชุ่มชื้น อย่าดื่มมากจนรู้สึกหนัก' });
     if (totalMin >= 50) {
-      items.push({ type:'gel', km:'~5 km', title:'Energy Gel 1 ซอง (25g carb) + น้ำ', desc:'สำหรับผู้ที่ใช้เวลา >50 นาที หรืออากาศร้อน แนะนำ Gel ตรงกลางระยะเพื่อรักษา performance ช่วงท้าย' });
+      items.push({ type:'gel', km:'~5 km', title:'Energy Gel 1 ซอง (25g carb)', desc:'สำหรับผู้ที่ใช้เวลา >50 นาที แนะนำ Gel ตรงกลางระยะเพื่อรักษา performance ช่วงท้าย' });
     }
-    items.push({ type:'electrolyte', km:'~7–8 km', title:'น้ำ หรือ Electrolyte', desc:'เติมเกลือแร่ถ้าเหงื่อออกมาก หรืออากาศร้อนชื้น ช่วยป้องกันตะคริว' });
+    items.push({ type:'electrolyte', km:'~7–8 km', title:'Electrolyte', desc:'เติมเกลือแร่ถ้าเหงื่อออกมาก หรืออากาศร้อนชื้น ช่วยป้องกันตะคริว' });
   } else if (dist <= 21.1) {
-    items.push({ type:'water', km:'~5 km', title:'น้ำเปล่า 150–200 ml', desc:'เริ่มดื่มน้ำตั้งแต่เนิ่น ๆ อย่ารอจนกระหายมาก รักษาระดับ hydration ตลอดการวิ่ง' });
-    items.push({ type:'gel', km:'~8–9 km', title:'Energy Gel #1 (25g carb) + น้ำ', desc:'เติม Carb ครั้งแรก เป้าหมาย 30–60g/ชั่วโมง ตาม ACSM Guidelines ดื่มน้ำ 150–200 ml ทันที' });
-    items.push({ type:'electrolyte', km:'~13 km', title:'Electrolyte Drink 150–200 ml', desc:'เติมโซเดียมและ Electrolyte ป้องกันตะคริวและรักษาสมดุลเกลือแร่ช่วงครึ่งหลัง' });
-    if (totalMin > 100) {
-      items.push({ type:'gel', km:'~16–17 km', title:'Energy Gel #2 (ถ้าใช้เวลา >1:40 h)', desc:'สำหรับผู้ที่ใช้เวลานาน ควรเติม Carb รอบที่ 2 เพื่อ fuel ช่วง 4–5 km สุดท้าย' });
+    if (totalMin < 90) {
+      // <1:30 h — 1 Gel
+      items.push({ type:'gel',        km:'~10–11 km', title:'Energy Gel #1 (25g carb)', desc:'เติม Carb ครั้งเดียวช่วงกึ่งกลาง เพียงพอสำหรับ pace เร็ว' });
+      items.push({ type:'electrolyte',km:'~16 km',    title:'Electrolyte',               desc:'เติมเกลือแร่ช่วงท้ายเพื่อป้องกันตะคริว' });
+    } else if (totalMin < 120) {
+      // 1:30–2:00 h — 2 Gels
+      items.push({ type:'gel',        km:'~8–9 km',   title:'Energy Gel #1 (25g carb)', desc:'เติม Carb ครั้งแรก เป้าหมาย 30–60g/ชั่วโมง ตาม ACSM Guidelines' });
+      items.push({ type:'electrolyte',km:'~13 km',    title:'Electrolyte',               desc:'เติมโซเดียมและ Electrolyte ป้องกันตะคริวและรักษาสมดุลเกลือแร่ช่วงครึ่งหลัง' });
+      items.push({ type:'gel',        km:'~16–17 km', title:'Energy Gel #2 (25g carb)', desc:'เติม Carb รอบที่ 2 เพื่อ fuel ช่วง 4–5 km สุดท้าย' });
+    } else {
+      // >2:00 h — 3 Gels
+      items.push({ type:'gel',        km:'~7 km',     title:'Energy Gel #1 (25g carb)', desc:'เริ่มเติม Carb เร็วขึ้น เพราะวิ่งนาน Glycogen จะลดลงต่อเนื่อง' });
+      items.push({ type:'electrolyte',km:'~11 km',    title:'Electrolyte',               desc:'เติมเกลือแร่กึ่งกลางระยะ ป้องกันตะคริวและรักษาสมดุลเกลือแร่' });
+      items.push({ type:'gel',        km:'~14 km',    title:'Energy Gel #2 (25g carb)', desc:'เติม Carb รอบที่ 2 รักษา blood glucose ให้คงที่ตลอดช่วงท้าย' });
+      items.push({ type:'gel',        km:'~18–19 km', title:'Energy Gel #3 (25g carb)', desc:'เติม Carb รอบที่ 3 เพื่อรักษาพลังงานถึงเส้นชัย' });
     }
-    items.push({ type:'water', km:'~19–20 km', title:'น้ำเปล่าเล็กน้อย', desc:'จิบน้ำเบา ๆ ก่อน Finish Line อย่าดื่มมากเกินไปในช่วงนี้' });
   } else {
     // Full Marathon
-    items.push({ type:'water',      km:'~5 km',         title:'น้ำเปล่า 150–200 ml', desc:'เริ่มดื่มน้ำตั้งแต่เนิ่น ๆ แม้จะยังไม่กระหาย เพื่อสร้าง hydration reserve' });
-    items.push({ type:'gel',        km:'~10 km (~45 min)', title:'Energy Gel #1 (25g carb) + น้ำ', desc:'เริ่มเติม Carb ก่อนที่ Glycogen จะลดลงมาก ดื่มน้ำตาม 150–200 ml ทันที' });
-    items.push({ type:'electrolyte',km:'~15 km',         title:'Electrolyte Drink 200 ml', desc:'เติมโซเดียม, โพแทสเซียม เพื่อป้องกันตะคริวและรักษาสมดุลเกลือแร่' });
-    items.push({ type:'gel',        km:'~20 km',         title:'Energy Gel #2 (25g carb)', desc:'เป้าหมาย 30–60g Carb/ชั่วโมง ตาม ACSM/Jeukendrup — รักษา blood glucose ให้คงที่' });
-    items.push({ type:'water',      km:'~25 km',         title:'น้ำ + Gel หรือกล้วย', desc:'ช่วงกลาง Marathon ร่างกายต้องการ Carb ต่อเนื่อง กล้วย 1 ลูกที่จุดบริการ = 25g carb' });
-    items.push({ type:'gel',        km:'~30 km',         title:'🔑 Energy Gel #3 — สำคัญมาก!', desc:'km 30–35 คือช่วงวิกฤต Glycogen เริ่มร่อยหรอ เติม Carb ตอนนี้ป้องกัน "ชนกำแพง" ได้' });
-    items.push({ type:'electrolyte',km:'~35 km',         title:'Electrolyte + น้ำ', desc:'เติมเกลือแร่รอบสุดท้าย บางนักวิ่งใช้ Regular Cola ที่ km 35 เพื่อ quick energy boost' });
+    items.push({ type:'gel',        km:'~10 km',    title:'Energy Gel #1 (25g carb)',      desc:'เริ่มเติม Carb ก่อนที่ Glycogen จะลดลงมาก' });
+    items.push({ type:'electrolyte',km:'~15 km',    title:'Electrolyte',                    desc:'เติมโซเดียม, โพแทสเซียม เพื่อป้องกันตะคริวและรักษาสมดุลเกลือแร่' });
+    items.push({ type:'gel',        km:'~20 km',    title:'Energy Gel #2 (25g carb)',      desc:'เป้าหมาย 30–60g Carb/ชั่วโมง ตาม ACSM/Jeukendrup' });
+    items.push({ type:'gel',        km:'~30 km',    title:'🔑 Energy Gel #3 — สำคัญมาก!', desc:'km 30–35 คือช่วงวิกฤต Glycogen เริ่มร่อยหรอ เติม Carb ตอนนี้ป้องกัน "ชนกำแพง" ได้' });
+    items.push({ type:'electrolyte',km:'~35 km',    title:'Electrolyte',                    desc:'เติมเกลือแร่รอบสุดท้าย' });
     if (totalMin > 240) {
-      items.push({ type:'gel',      km:'~38 km',         title:'Energy Gel #4 (ถ้าใช้เวลา >4h)', desc:'สำหรับผู้ที่วิ่งนานกว่า 4 ชั่วโมง ควรเพิ่ม Gel รอบที่ 4 เพื่อรักษาพลังงานถึงเส้นชัย' });
+      items.push({ type:'gel',      km:'~38 km',    title:'Energy Gel #4 (>4h)',            desc:'สำหรับผู้ที่วิ่งนานกว่า 4 ชั่วโมง เพื่อรักษาพลังงานถึงเส้นชัย' });
     }
   }
 
